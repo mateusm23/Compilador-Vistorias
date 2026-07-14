@@ -26,6 +26,22 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+      - name: Verificar se o build gerou o dist corretamente
+        run: |
+          echo "--- conteúdo de dist/ ---"
+          ls -la dist
+          echo "--- dist/index.html ---"
+          cat dist/index.html
+          if grep -q "src/main.jsx" dist/index.html; then
+            echo "ERRO: dist/index.html ainda aponta para o código-fonte não compilado (src/main.jsx)."
+            echo "O build do Vite não substituiu o index.html corretamente."
+            exit 1
+          fi
+          if [ ! -d dist/assets ]; then
+            echo "ERRO: pasta dist/assets não foi gerada."
+            exit 1
+          fi
+          echo "OK: dist/index.html aponta para os assets compilados."
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
