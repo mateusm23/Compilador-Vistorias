@@ -58,17 +58,51 @@ export async function addNavigation(mergedDoc, offsets) {
   const updatedOffsets = offsets.map(o => ({ ...o, startPage: o.startPage + 1 }));
 
   const BLUE = rgb(0.165, 0.471, 0.839);
+  const BLUE_DARK = rgb(0.094, 0.310, 0.584);
   const BLUE_LIGHT = rgb(0.80, 0.89, 0.98);
+  const BLUE_PALE = rgb(0.91, 0.95, 0.99);
   const INK = rgb(0.043, 0.043, 0.043);
   const MUTED = rgb(0.54, 0.53, 0.51);
   const WHITE = rgb(1, 1, 1);
+  const PAGE_BG = rgb(0.957, 0.957, 0.949);
+  const SHADOW = rgb(0.85, 0.85, 0.84);
+  const STRIPE = rgb(0.965, 0.97, 0.985);
 
-  // título
-  mapPage.drawText('Mapa de Unidades — Laudos de Vistoria', {
-    x: 40, y: pageH - 44, size: 17, font: fontBold, color: INK,
+  // ---- fundo da página ----
+  mapPage.drawRectangle({ x: 0, y: 0, width: pageW, height: pageH, color: PAGE_BG });
+
+  // ---- faixa de cabeçalho ----
+  const headerH = 74;
+  mapPage.drawRectangle({ x: 0, y: pageH - headerH, width: pageW, height: headerH, color: BLUE });
+  mapPage.drawRectangle({ x: 0, y: pageH - headerH - 3, width: pageW, height: 3, color: BLUE_DARK });
+
+  mapPage.drawText('Mapa de Unidades', {
+    x: 40, y: pageH - 34, size: 20, font: fontBold, color: WHITE,
   });
-  mapPage.drawText('Clique numa unidade para abrir o laudo correspondente.', {
-    x: 40, y: pageH - 62, size: 10.5, font, color: MUTED,
+  mapPage.drawText('Clique numa unidade para abrir o laudo correspondente', {
+    x: 40, y: pageH - 53, size: 10.5, font, color: BLUE_LIGHT,
+  });
+
+  const totalUnidades = targets.length;
+  const geradoEm = new Date().toLocaleDateString('pt-BR');
+  const metaText = `${totalUnidades} unidade${totalUnidades === 1 ? '' : 's'} · gerado em ${geradoEm}`;
+  const metaWidth = fontBold.widthOfTextAtSize(metaText, 10);
+  mapPage.drawText(metaText, {
+    x: pageW - 40 - metaWidth, y: pageH - 40, size: 10, font: fontBold, color: WHITE,
+  });
+
+  // ---- cartão de conteúdo (com sombra sutil) ----
+  const cardMargin = 32;
+  const cardTop = pageH - headerH - 16;
+  const cardBottom = 54;
+  const cardX = cardMargin;
+  const cardW = pageW - cardMargin * 2;
+  const cardH = cardTop - cardBottom;
+
+  mapPage.drawRectangle({ x: cardX + 2, y: cardBottom - 2, width: cardW, height: cardH, color: SHADOW, opacity: 0.5 });
+  mapPage.drawRectangle({
+    x: cardX, y: cardBottom, width: cardW, height: cardH,
+    color: WHITE, borderColor: rgb(0.88, 0.88, 0.87), borderWidth: 1,
   });
 
   // agrupar unidades reconhecíveis (padrão pavimento+numero+lado) e as demais
@@ -81,15 +115,17 @@ export async function addNavigation(mergedDoc, offsets) {
     else naoReconhecidas.push(t);
   });
 
-  const marginX = 40;
-  const gridTop = pageH - 90;
-  const gridBottom = 40;
+  const innerPad = 18;
+  const marginX = cardX + innerPad;
+  const gridTop = cardTop - 34;
+  const gridBottom = cardBottom + (naoReconhecidas.length > 0 ? 54 : innerPad);
 
   if (parsed.length > 0) {
     const pavimentos = [...new Set(parsed.map(p => p.pav))].sort((a, b) => b - a);
     const cols = 8; // A1-4, gap, B1-4 (gap tratado como coluna estreita)
-    const gapColWidth = 10;
-    const gridWidth = pageW - marginX * 2;
+    const gapColWidth = 14;
+    const labelColWidth = 24;
+    const gridWidth = (cardX + cardW - innerPad) - marginX - labelColWidth;
     const cellWidth = (gridWidth - gapColWidth) / cols;
     const rowCount = pavimentos.length;
     const availableHeight = gridTop - gridBottom;
@@ -102,12 +138,32 @@ export async function addNavigation(mergedDoc, offsets) {
       byPavLadoNum[key] = p;
     });
 
+    // faixa de cabeçalho da grade (labels de lado)
+    const ladoALabelX = marginX + labelColWidth;
+    const ladoBLabelX = marginX + labelColWidth + 4 * cellWidth + gapColWidth;
+    const pillY = gridTop + 10;
+    [
+      { x: ladoALabelX, text: 'LADO A' },
+      { x: ladoBLabelX, text: 'LADO B' },
+    ].forEach(({ x, text }) => {
+      const w = fontBold.widthOfTextAtSize(text, 8) + 14;
+      mapPage.drawRectangle({ x, y: pillY, width: w, height: 15, color: BLUE_PALE });
+      mapPage.drawText(text, { x: x + 7, y: pillY + 4.5, size: 8, font: fontBold, color: BLUE_DARK });
+    });
+
     pavimentos.forEach((pav, rowIdx) => {
       const y = gridTop - rowIdx * (cellHeight + rowGap) - cellHeight;
       if (y < gridBottom) return; // segurança: não desenhar fora da página
 
+      if (rowIdx % 2 === 1) {
+        mapPage.drawRectangle({
+          x: marginX, y: y - 1, width: labelColWidth + gridWidth, height: cellHeight + 2,
+          color: STRIPE,
+        });
+      }
+
       mapPage.drawText(String(pav), {
-        x: marginX - 2, y: y + cellHeight / 2 - 3, size: 8, font, color: MUTED,
+        x: marginX + labelColWidth - 6 - font.widthOfTextAtSize(String(pav), 8), y: y + cellHeight / 2 - 3, size: 8, font, color: MUTED,
       });
 
       let colIdx = 0;
@@ -116,17 +172,20 @@ export async function addNavigation(mergedDoc, offsets) {
           const key = `${pav}|${lado}|${n}`;
           const unit = byPavLadoNum[key];
           const extraGap = lado === 'B' ? gapColWidth : 0;
-          const x = marginX + 26 + colIdx * cellWidth + extraGap;
+          const x = marginX + labelColWidth + colIdx * cellWidth + extraGap;
 
           if (unit) {
             mapPage.drawRectangle({
               x, y, width: cellWidth - 2, height: cellHeight,
               color: BLUE_LIGHT, borderColor: BLUE, borderWidth: 0.75,
             });
+            mapPage.drawRectangle({
+              x, y, width: cellWidth - 2, height: 1.5, color: BLUE,
+            });
             const label = unit.code;
             const size = cellHeight > 13 ? 6.5 : 5.5;
             mapPage.drawText(label, {
-              x: x + 3, y: y + cellHeight / 2 - size / 2 - 1, size, font, color: INK,
+              x: x + 4, y: y + cellHeight / 2 - size / 2 - 1, size, font: fontBold, color: BLUE_DARK,
             });
             addLinkAnnotation(mergedDoc, mapPage, { x, y, width: cellWidth - 2, height: cellHeight }, unit.page);
           }
@@ -134,42 +193,48 @@ export async function addNavigation(mergedDoc, offsets) {
         }
       });
     });
-
-    // legenda de lado
-    mapPage.drawText('LADO A', { x: marginX + 26, y: gridTop + 8, size: 8, font: fontBold, color: MUTED });
-    mapPage.drawText('LADO B', { x: marginX + 26 + 4 * cellWidth + gapColWidth, y: gridTop + 8, size: 8, font: fontBold, color: MUTED });
   }
 
   // unidades cujo nome de arquivo não segue o padrão pavimento/lado — lista simples de links
   if (naoReconhecidas.length > 0) {
-    let x = marginX;
-    let y = parsed.length > 0 ? gridBottom - 14 : gridTop;
-    if (y < 30) y = 30;
-    mapPage.drawText('Outras unidades:', { x, y: y + 12, size: 9, font: fontBold, color: MUTED });
+    const y0 = cardBottom + innerPad + 30;
+    mapPage.drawText('Outras unidades', { x: marginX, y: y0 + 12, size: 9, font: fontBold, color: MUTED });
     const colWidth = 130;
     let col = 0;
     naoReconhecidas.forEach((t, i) => {
-      const cx = x + col * colWidth;
-      const cy = y - Math.floor(i / 6) * 12;
+      const cx = marginX + col * colWidth;
+      const cy = y0 - Math.floor(i / 6) * 12;
       mapPage.drawText(t.unidade, { x: cx, y: cy, size: 8, font, color: BLUE });
       addLinkAnnotation(mergedDoc, mapPage, { x: cx - 2, y: cy - 2, width: colWidth - 6, height: 11 }, t.page);
       col = (col + 1) % 6;
     });
   }
 
+  // ---- rodapé ----
+  mapPage.drawText('Gerado por Extrator de Vistorias', {
+    x: 40, y: 26, size: 8.5, font, color: MUTED,
+  });
+  const pageCountText = `${mergedDoc.getPageCount()} páginas no total`;
+  const pageCountWidth = font.widthOfTextAtSize(pageCountText, 8.5);
+  mapPage.drawText(pageCountText, {
+    x: pageW - 40 - pageCountWidth, y: 26, size: 8.5, font, color: MUTED,
+  });
+
   // botão "Voltar ao mapa" no topo de todas as demais páginas
   const allPages = mergedDoc.getPages();
   for (let i = 1; i < allPages.length; i++) {
     const p = allPages[i];
     const { width, height } = p.getSize();
-    const btnW = 96, btnH = 16;
+    const btnW = 100, btnH = 17;
     const bx = width - btnW - 10;
     const by = height - btnH - 8;
     p.drawRectangle({
-      x: bx, y: by, width: btnW, height: btnH,
-      color: WHITE, borderColor: BLUE, borderWidth: 0.75, opacity: 0.92,
+      x: bx + 1, y: by - 1, width: btnW, height: btnH, color: SHADOW, opacity: 0.6,
     });
-    p.drawText('<< Voltar ao mapa', { x: bx + 6, y: by + 4.5, size: 7.5, font: fontBold, color: BLUE });
+    p.drawRectangle({
+      x: bx, y: by, width: btnW, height: btnH, color: BLUE,
+    });
+    p.drawText('<< Voltar ao mapa', { x: bx + 8, y: by + 5, size: 7.5, font: fontBold, color: WHITE });
     addLinkAnnotation(mergedDoc, p, { x: bx, y: by, width: btnW, height: btnH }, mapPage);
   }
 
