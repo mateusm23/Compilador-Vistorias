@@ -58,15 +58,19 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
 
 ## Fases de implementação
 
-- [ ] **Fase 0 — este documento** (`PLAN.md`), commitado antes de qualquer
-      código novo.
-- [ ] **Fase 1 — Reestruturação do front-end como wizard multi-etapa**
+- [x] **Fase 0 — este documento** (`PLAN.md`), commitado antes de qualquer
+      código novo. Commit `5033f79`.
+- [x] **Fase 1 — Reestruturação do front-end como wizard multi-etapa**
       Sidebar estilo referência (navy `#1A2B45`, etapas numeradas, estado
-      ativo com destaque, navegação livre entre etapas). Estado do
-      formulário centralizado (React context ou estado no `App`).
-- [ ] **Fase 2 — Upload de PDFs move para o passo 1 e auto-popula o mapa**
-      Extrai unidades detectadas via nome de arquivo assim que os PDFs são
-      soltos (antes de "processar" tudo), preenche o mapa inicial.
+      ativo com destaque, navegação livre entre etapas). Estado centralizado
+      em `src/state/ReportContext.jsx`. Testado ponta a ponta com 29 PDFs
+      reais. Commit `d8a3bbe`.
+- [x] **Fase 2 — Upload de PDFs move para o passo 1 e auto-popula o mapa**
+      Feito junto com a Fase 1: `src/lib/units.js` (novo, compartilhado com
+      `pdfmap.js`) detecta unidades pelo nome do arquivo assim que os PDFs
+      são soltos; `Step2Map.jsx` já lista as unidades detectadas (versão
+      provisória em lista — a grade visual completa entra na Fase 10).
+      Commit `d8a3bbe`.
 - [ ] **Fase 3 — Configuração de estrutura do empreendimento + categorias**
       UI para editar pavimentos/blocos/aptos por andar, criar categorias
       customizadas (nome + cor), clique na unidade abre seletor de categoria.
