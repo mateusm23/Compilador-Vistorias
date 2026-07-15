@@ -120,9 +120,15 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       aparece colorida mas sem link.
 - [x] **Fase 11 — Botão "voltar ao mapa" redesenhado**
       Azul petróleo (#0F4C5C), sem "<<", largura calculada pelo texto real.
-- [ ] **Fase 9 — Páginas de resumo com gráficos**
-      Farol de Controle, por Categoria, por Unidade — barras e rosca
-      desenhadas manualmente em pdf-lib (sem biblioteca de gráfico pronta).
+- [x] **Fase 9 — Página de resumo executivo com gráficos**
+      `src/lib/summaryRender.js`: rosca do farol de controle (fatias via
+      `drawSvgPath` com arco SVG, furo central desenhado por cima) e barras
+      horizontais de não conformidades por categoria, lado a lado numa
+      página inserida após capa+mapa+introdução. Testado com os 42 PDFs
+      reais: rosca com as cores e contagens certas (30/9/3), barras
+      ordenadas por volume batendo com os números já validados no Excel.
+      Offsets e link de volta ao mapa continuam corretos com a página
+      extra.
 - [ ] **Fase 10 — Mapa reformulado**
       Grid completo do empreendimento (não só unidades com PDF), cor por
       categoria definida pelo usuário, unidades sem categoria aparecem

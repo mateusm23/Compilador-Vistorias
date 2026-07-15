@@ -71,10 +71,17 @@ export async function processFiles(files, onProgress, extra = {}) {
   const unitCounts = {};
   semFoto.forEach(it => { unitCounts[it.unidade] = (unitCounts[it.unidade] || 0) + 1; });
 
+  const catCounts = {};
+  semFoto.forEach(it => { catCounts[it.categoria] = (catCounts[it.categoria] || 0) + 1; });
+  const categoryCounts = Object.entries(catCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([categoria, count]) => ({ categoria, count }));
+
   log('Criando capa e mapa clicável no PDF...');
   const navigableOffsets = await addNavigation(merged, offsets, {
     unitCounts,
     totalNaoConformidades: semFoto.length,
+    categoryCounts,
     reportData: extra.reportData,
     logo: extra.logo,
     capaPhoto: extra.capaPhoto,
