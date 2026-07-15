@@ -41,8 +41,8 @@ function addLinkAnnotation(doc, page, rect, targetPage) {
 const BLUE = c('2A78D6');
 const BLUE_DARK = c('184F95');
 const PETROLEUM = c('0F4C5C');
-const NAVY = c('0B1524');
-const NAVY_2 = c('132038');
+const NAVY = c('1A2B45');
+const NAVY_2 = c('24365C');
 const WHITE = c('FFFFFF');
 const INK = c('0B0B0B');
 const MUTED = c('8A8985');
@@ -98,9 +98,9 @@ function drawCoverPage(page, {
     page.drawRectangle({ x: marginX, y: h - 68, width: 34, height: 2, color: BLUE });
   }
 
-  // foto da obra, no canto superior direito
+  // foto da obra, ocupando boa parte da largura direita da capa
   if (capaPhotoImage) {
-    const boxW = 220, boxH = 130;
+    const boxW = 340, boxH = 230;
     const boxX = w - marginX - boxW, boxY = h - 34 - boxH;
     const fitted = fitContain(capaPhotoImage, boxW, boxH);
     page.drawRectangle({ x: boxX - 4, y: boxY - 4, width: boxW + 8, height: boxH + 8, color: WHITE, opacity: 0.08 });
@@ -133,7 +133,7 @@ function drawCoverPage(page, {
 
   // painel de números-chave
   const panelY = 110;
-  const panelH = 150;
+  const panelH = 120;
   const panelW = w - marginX * 2;
   page.drawRectangle({
     x: marginX, y: panelY, width: panelW, height: panelH,
@@ -148,35 +148,8 @@ function drawCoverPage(page, {
   const colW = panelW / stats.length;
   stats.forEach((s, i) => {
     const x = marginX + i * colW + 24;
-    page.drawText(s.value, { x, y: panelY + panelH - 46, size: 26, font: fontBold, color: WHITE });
-    page.drawText(s.label.toUpperCase(), { x, y: panelY + panelH - 66, size: 8.5, font, color: c('8FA3C2') });
-  });
-
-  // barra de farol (distribuição de severidade)
-  const barY = panelY + 28;
-  const barX = marginX + 24;
-  const barW = panelW - 48;
-  const total = Math.max(1, farolCounts.regular + farolCounts.atencao + farolCounts.critico);
-  let cursor = barX;
-  const barH = 8;
-  [
-    { n: farolCounts.regular, hex: 'regular' },
-    { n: farolCounts.atencao, hex: 'atencao' },
-    { n: farolCounts.critico, hex: 'critico' },
-  ].forEach(seg => {
-    const segW = (seg.n / total) * barW;
-    if (segW <= 0) return;
-    const colorHex = seg.hex === 'regular' ? '0CA30C' : seg.hex === 'atencao' ? 'F5C800' : 'D03B3B';
-    page.drawRectangle({ x: cursor, y: barY, width: segW, height: barH, color: c(colorHex) });
-    cursor += segW;
-  });
-  page.drawText(`${farolCounts.regular} regular · ${farolCounts.atencao} atenção · ${farolCounts.critico} crítico`, {
-    x: barX, y: barY - 14, size: 8.5, font, color: c('8FA3C2'),
-  });
-
-  // rodapé
-  page.drawText('Desenvolvido por Mateus Monteiro · 62 99156-3421', {
-    x: marginX, y: 34, size: 8, font, color: c('5E7291'),
+    page.drawText(s.value, { x, y: panelY + panelH - 50, size: 26, font: fontBold, color: WHITE });
+    page.drawText(s.label.toUpperCase(), { x, y: panelY + panelH - 70, size: 8.5, font, color: c('8FA3C2') });
   });
 }
 
@@ -386,7 +359,6 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
     });
   }
 
-  mapPage.drawText('Desenvolvido por Mateus Monteiro · 62 99156-3421', { x: 40, y: 26, size: 8.5, font, color: MUTED });
   const pageCountText = `${mergedDoc.getPageCount() + 1} páginas no total`;
   const pageCountWidth = font.widthOfTextAtSize(pageCountText, 8.5);
   mapPage.drawText(pageCountText, { x: pageW - 40 - pageCountWidth, y: 26, size: 8.5, font, color: MUTED });
@@ -437,9 +409,6 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
     p.drawRectangle({ x: 0, y: 0, width, height: footerH, color: WHITE });
     p.drawRectangle({ x: 24, y: footerH - 1, width: width - 48, height: 0.75, color: BORDER_LIGHT });
     p.drawText(gerenciadora, { x: 24, y: 22, size: 8, font: fontBold, color: NAVY });
-    const brandText = 'Extrator de Vistorias';
-    const brandW = font.widthOfTextAtSize(brandText, 7.5);
-    p.drawText(brandText, { x: width - 24 - brandW, y: 22, size: 7.5, font, color: MUTED });
 
     const labelWidth = fontBold.widthOfTextAtSize(backLabel, 8);
     const btnW = labelWidth + 24, btnH = 18;

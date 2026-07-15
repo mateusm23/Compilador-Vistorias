@@ -40,6 +40,10 @@ function extractRuns(doc) {
     const align = node.attrs?.textAlign || 'left';
     const runs = [];
     (node.content || []).forEach(textNode => {
+      if (textNode.type === 'hardBreak') {
+        runs.push({ forceBreak: true });
+        return;
+      }
       if (textNode.type !== 'text') return;
       const marks = textNode.marks || [];
       const bold = marks.some(m => m.type === 'bold');
@@ -139,9 +143,14 @@ export async function drawIntroContent(mergedDoc, introContent, fonts, insertAtI
       return;
     }
 
-    // separa cada run em palavras, preservando o estilo
+    // separa cada run em palavras, preservando o estilo; quebras de linha
+    // manuais (shift+enter) viram um marcador que força nova linha
     const words = [];
     paragraph.runs.forEach(run => {
+      if (run.forceBreak) {
+        words.push({ forceBreak: true });
+        return;
+      }
       const parts = run.text.split(/(\s+)/).filter(s => s.length > 0);
       parts.forEach(part => words.push({ ...run, text: part }));
     });
@@ -151,6 +160,12 @@ export async function drawIntroContent(mergedDoc, introContent, fonts, insertAtI
     const lines = [];
 
     words.forEach(word => {
+      if (word.forceBreak) {
+        lines.push({ words: line, width: lineWidth });
+        line = [];
+        lineWidth = 0;
+        return;
+      }
       const font = pickFont(fonts, word.bold, word.italic);
       const w = font.widthOfTextAtSize(word.text, word.fontSize);
       if (lineWidth + w > maxWidth && line.length > 0 && word.text.trim()) {
@@ -164,7 +179,9 @@ export async function drawIntroContent(mergedDoc, introContent, fonts, insertAtI
     if (line.length > 0) lines.push({ words: line, width: lineWidth });
 
     lines.forEach(lineData => {
-      const maxFontSize = Math.max(...lineData.words.map(w => w.fontSize));
+      const maxFontSize = lineData.words.length > 0
+        ? Math.max(...lineData.words.map(w => w.fontSize))
+        : 13;
       const lineHeight = maxFontSize * 1.5;
       ensureSpace(lineHeight);
       y -= lineHeight;
