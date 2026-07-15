@@ -109,6 +109,17 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       nenhuma página é criada. Testado com texto longo (várias linhas) e
       sem texto nenhum — links e numeração de página corretos nos dois
       casos.
+- [x] **Fase 10 — Mapa reformulado**
+      Grade completa do empreendimento (todos os pavimentos/blocos
+      configurados, não só as unidades com PDF), cor por categoria definida
+      pelo usuário (não mais farol de severidade), legenda dinâmica, blocos
+      generalizados (não mais fixo em A/B). Unidades sem categoria aparecem
+      como caixa vazia tracejada. Link no mapa só existe se a unidade tiver
+      laudo de verdade. Testado: 29 unidades com PDF geram exatamente 29
+      links; uma unidade sem PDF categorizada manualmente ("Não Liberado")
+      aparece colorida mas sem link.
+- [x] **Fase 11 — Botão "voltar ao mapa" redesenhado**
+      Azul petróleo (#0F4C5C), sem "<<", largura calculada pelo texto real.
 - [ ] **Fase 9 — Páginas de resumo com gráficos**
       Farol de Controle, por Categoria, por Unidade — barras e rosca
       desenhadas manualmente em pdf-lib (sem biblioteca de gráfico pronta).

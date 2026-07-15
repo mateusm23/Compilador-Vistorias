@@ -5,7 +5,7 @@
 
 import { PageSizes, rgb, StandardFonts, PDFName } from 'pdf-lib';
 import { buildFarolThresholds, farolFor, hexToFraction } from './farol.js';
-import { normalizeCode, parseUnitCode } from './units.js';
+import { normalizeCode, parseUnitCode, buildUnitCode } from './units.js';
 import { drawIntroContent } from './introRender.js';
 
 function c(hex) {
@@ -39,6 +39,7 @@ function addLinkAnnotation(doc, page, rect, targetPage) {
 
 const BLUE = c('2A78D6');
 const BLUE_DARK = c('184F95');
+const PETROLEUM = c('0F4C5C');
 const NAVY = c('0B1524');
 const NAVY_2 = c('132038');
 const WHITE = c('FFFFFF');
@@ -240,62 +241,85 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
     color: WHITE, borderColor: BORDER_LIGHT, borderWidth: 1,
   });
 
-  // agrupar unidades reconhecíveis (padrão pavimento+numero+lado) e as demais
-  const parsed = [];
+  // categorias definidas pelo usuário (com fallback para "Vistoriada" azul,
+  // caso a ferramenta seja usada sem passar por essa configuração)
+  const categories = meta.categories && meta.categories.length > 0
+    ? meta.categories
+    : [{ id: 'vistoriada', nome: 'Vistoriada', cor: '2A78D6', padrao: true }];
+  const categoryById = {};
+  categories.forEach(cat => { categoryById[cat.id] = cat; });
+  const defaultCategory = categories.find(cat => cat.padrao) || categories[0];
+  const unitCategoryOverrides = meta.unitCategoryOverrides || {};
+
+  // mapear cada unidade com laudo para o código reconhecido (pavimento+lado+número)
+  const targetByCode = {};
   const naoReconhecidas = [];
   targets.forEach(t => {
     const code = normalizeCode(t.unidade);
     const p = parseUnitCode(code);
-    if (p) parsed.push({ ...t, ...p, code });
+    if (p) targetByCode[code] = t;
     else naoReconhecidas.push(t);
   });
+
+  // estrutura do empreendimento: usa a configuração do usuário, com fallback
+  // calculado a partir das unidades detectadas (compatibilidade retroativa)
+  let buildingConfig = meta.buildingConfig;
+  if (!buildingConfig) {
+    const parsedFallback = targets
+      .map(t => ({ t, p: parseUnitCode(normalizeCode(t.unidade)) }))
+      .filter(x => x.p);
+    if (parsedFallback.length > 0) {
+      buildingConfig = {
+        pavMin: Math.min(...parsedFallback.map(x => x.p.pav)),
+        pavMax: Math.max(...parsedFallback.map(x => x.p.pav)),
+        numMin: Math.min(...parsedFallback.map(x => x.p.num)),
+        numMax: Math.max(...parsedFallback.map(x => x.p.num)),
+        lados: [...new Set(parsedFallback.map(x => x.p.lado))].sort(),
+      };
+    }
+  }
 
   const innerPad = 18;
   const marginX = cardX + innerPad;
   const gridTop = cardTop - 34;
   const gridBottom = cardBottom + (naoReconhecidas.length > 0 ? 54 : innerPad);
 
-  if (parsed.length > 0) {
-    const pavimentos = [...new Set(parsed.map(p => p.pav))].sort((a, b) => b - a);
-    const cols = 8;
+  if (buildingConfig && buildingConfig.lados.length > 0) {
+    const { pavMin, pavMax, numMin, numMax, lados } = buildingConfig;
+    const numCount = numMax - numMin + 1;
+    const pavimentos = [];
+    for (let p = pavMax; p >= pavMin; p--) pavimentos.push(p);
+
     const gapColWidth = 14;
     const labelColWidth = 24;
+    const cols = lados.length * numCount;
     const gridWidth = (cardX + cardW - innerPad) - marginX - labelColWidth;
-    const cellWidth = (gridWidth - gapColWidth) / cols;
+    const totalGaps = gapColWidth * (lados.length - 1);
+    const cellWidth = (gridWidth - totalGaps) / cols;
     const rowCount = pavimentos.length;
     const availableHeight = gridTop - gridBottom;
-    const cellHeight = Math.max(9, Math.min(22, availableHeight / rowCount - 3));
+    const cellHeight = Math.max(7, Math.min(22, availableHeight / rowCount - 3));
     const rowGap = 3;
 
-    const byPavLadoNum = {};
-    parsed.forEach(p => {
-      const key = `${p.pav}|${p.lado}|${p.num}`;
-      byPavLadoNum[key] = p;
-    });
-
-    const ladoALabelX = marginX + labelColWidth;
-    const ladoBLabelX = marginX + labelColWidth + 4 * cellWidth + gapColWidth;
+    // rótulos de bloco, um por lado configurado
     const pillY = gridTop + 10;
-    [{ x: ladoALabelX, text: 'LADO A' }, { x: ladoBLabelX, text: 'LADO B' }].forEach(({ x, text }) => {
+    lados.forEach((lado, li) => {
+      const x = marginX + labelColWidth + li * (numCount * cellWidth + gapColWidth);
+      const text = `BLOCO ${lado}`;
       const pw = fontBold.widthOfTextAtSize(text, 8) + 14;
       mapPage.drawRectangle({ x, y: pillY, width: pw, height: 15, color: c('E8F0FC') });
       mapPage.drawText(text, { x: x + 7, y: pillY + 4.5, size: 8, font: fontBold, color: BLUE_DARK });
     });
 
-    // legenda de farol, alinhada à direita do cabeçalho da grade
-    const legendItems = [
-      { label: 'Regular', hex: '0CA30C' },
-      { label: 'Atenção', hex: 'C98500' },
-      { label: 'Crítico', hex: 'D03B3B' },
-    ];
+    // legenda das categorias, alinhada à direita do cabeçalho da grade
     let legendX = cardX + cardW - innerPad;
-    for (let i = legendItems.length - 1; i >= 0; i--) {
-      const item = legendItems[i];
-      const tw = font.widthOfTextAtSize(item.label, 7.5);
+    for (let i = categories.length - 1; i >= 0; i--) {
+      const item = categories[i];
+      const tw = font.widthOfTextAtSize(item.nome, 7.5);
       legendX -= tw;
-      mapPage.drawText(item.label, { x: legendX, y: pillY + 4.5, size: 7.5, font, color: MUTED });
+      mapPage.drawText(item.nome, { x: legendX, y: pillY + 4.5, size: 7.5, font, color: MUTED });
       legendX -= 12;
-      mapPage.drawRectangle({ x: legendX, y: pillY + 3.5, width: 8, height: 8, color: c(item.hex) });
+      mapPage.drawRectangle({ x: legendX, y: pillY + 3.5, width: 8, height: 8, color: c(item.cor) });
       legendX -= 10;
     }
 
@@ -314,27 +338,32 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
       });
 
       let colIdx = 0;
-      ['A', 'B'].forEach(lado => {
-        for (let n = 1; n <= 4; n++) {
-          const key = `${pav}|${lado}|${n}`;
-          const unit = byPavLadoNum[key];
-          const extraGap = lado === 'B' ? gapColWidth : 0;
+      lados.forEach((lado, li) => {
+        for (let n = numMin; n <= numMax; n++) {
+          const code = buildUnitCode(pav, n, lado);
+          const target = targetByCode[code];
+          const overrideId = unitCategoryOverrides[code];
+          const categoryId = overrideId || (target ? defaultCategory.id : null);
+          const category = categoryId ? categoryById[categoryId] : null;
+          const extraGap = li * gapColWidth;
           const x = marginX + labelColWidth + colIdx * cellWidth + extraGap;
 
-          if (unit) {
-            const count = unitCounts[unit.unidade] || 0;
-            const farol = farolFor(count, thresholds);
-            const fill = c(farol.hex);
-            const textColor = isLight(farol.hex) ? INK : WHITE;
-
+          if (category) {
+            const fill = c(category.cor);
+            const textColor = isLight(category.cor) ? INK : WHITE;
             mapPage.drawRectangle({ x, y, width: cellWidth - 2, height: cellHeight, color: fill });
-            const label = unit.code;
             const size = cellHeight > 13 ? 6.5 : 5.5;
-            const labelWidth = fontBold.widthOfTextAtSize(label, size);
-            mapPage.drawText(label, {
+            const labelWidth = fontBold.widthOfTextAtSize(code, size);
+            mapPage.drawText(code, {
               x: x + (cellWidth - 2 - labelWidth) / 2, y: y + cellHeight / 2 - size / 2 - 1, size, font: fontBold, color: textColor,
             });
-            addLinkAnnotation(mergedDoc, mapPage, { x, y, width: cellWidth - 2, height: cellHeight }, unit.page);
+            if (target) {
+              addLinkAnnotation(mergedDoc, mapPage, { x, y, width: cellWidth - 2, height: cellHeight }, target.page);
+            }
+          } else {
+            mapPage.drawRectangle({
+              x, y, width: cellWidth - 2, height: cellHeight, color: PAGE_BG, borderColor: BORDER_LIGHT, borderWidth: 0.5,
+            });
           }
           colIdx++;
         }
@@ -389,15 +418,17 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
 
   // botão "Voltar ao mapa" no topo de todas as páginas de laudo (após capa+mapa+introdução)
   const allPages = mergedDoc.getPages();
+  const backLabel = 'Voltar ao mapa';
   for (let i = totalNewPages; i < allPages.length; i++) {
     const p = allPages[i];
     const { width, height } = p.getSize();
-    const btnW = 100, btnH = 17;
+    const labelWidth = fontBold.widthOfTextAtSize(backLabel, 8);
+    const btnW = labelWidth + 24, btnH = 18;
     const bx = width - btnW - 10;
     const by = height - btnH - 8;
     p.drawRectangle({ x: bx + 1, y: by - 1, width: btnW, height: btnH, color: SHADOW, opacity: 0.6 });
-    p.drawRectangle({ x: bx, y: by, width: btnW, height: btnH, color: BLUE });
-    p.drawText('<< Voltar ao mapa', { x: bx + 8, y: by + 5, size: 7.5, font: fontBold, color: WHITE });
+    p.drawRectangle({ x: bx, y: by, width: btnW, height: btnH, color: PETROLEUM });
+    p.drawText(backLabel, { x: bx + 12, y: by + 5.5, size: 8, font: fontBold, color: WHITE });
     addLinkAnnotation(mergedDoc, p, { x: bx, y: by, width: btnW, height: btnH }, mapPage);
   }
 

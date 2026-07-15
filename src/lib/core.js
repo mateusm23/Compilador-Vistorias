@@ -79,6 +79,9 @@ export async function processFiles(files, onProgress, extra = {}) {
     logo: extra.logo,
     capaPhoto: extra.capaPhoto,
     introContent: extra.introContent,
+    buildingConfig: extra.buildingConfig,
+    categories: extra.categories,
+    unitCategoryOverrides: extra.unitCategoryOverrides,
   });
 
   const pageByFile = {};

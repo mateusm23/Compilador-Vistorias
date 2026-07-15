@@ -90,6 +90,9 @@ export default function Step6Generate() {
         logo,
         capaPhoto,
         introContent: state.introContent,
+        buildingConfig: state.buildingConfig,
+        categories: state.categories,
+        unitCategoryOverrides: state.unitCategoryOverrides,
       },
       transferList,
     );
