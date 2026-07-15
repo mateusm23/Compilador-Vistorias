@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import StepShell from './StepShell.jsx';
 import CategoryManager from '../components/CategoryManager.jsx';
 import BuildingGrid from '../components/BuildingGrid.jsx';
@@ -14,6 +15,7 @@ function NumberField({ label, value, onChange }) {
 
 export default function Step2Map() {
   const { state, setBuildingConfig } = useReport();
+  const [novoBloco, setNovoBloco] = useState('');
 
   if (!state.buildingConfig) {
     return (
@@ -25,9 +27,16 @@ export default function Step2Map() {
 
   const { pavMin, pavMax, numMin, numMax, lados } = state.buildingConfig;
 
-  const toggleLado = (letra) => {
-    const next = lados.includes(letra) ? lados.filter(l => l !== letra) : [...lados, letra].sort();
-    setBuildingConfig({ lados: next });
+  const removeBloco = (bloco) => {
+    setBuildingConfig({ lados: lados.filter(l => l !== bloco) });
+  };
+
+  const addBloco = (e) => {
+    e.preventDefault();
+    const bloco = novoBloco.trim().toUpperCase();
+    if (!bloco || lados.includes(bloco)) return;
+    setBuildingConfig({ lados: [...lados, bloco].sort() });
+    setNovoBloco('');
   };
 
   return (
@@ -44,16 +53,22 @@ export default function Step2Map() {
 
       <div className="map-blocos-row">
         <span className="map-blocos-label">Blocos:</span>
-        {['A', 'B', 'C', 'D', 'E'].map(letra => (
-          <button
-            key={letra}
-            type="button"
-            className={`bloco-toggle${lados.includes(letra) ? ' active' : ''}`}
-            onClick={() => toggleLado(letra)}
-          >
-            {letra}
-          </button>
+        {lados.map(bloco => (
+          <span key={bloco} className="bloco-chip">
+            {bloco}
+            <button type="button" onClick={() => removeBloco(bloco)}>×</button>
+          </span>
         ))}
+        <form className="bloco-add-form" onSubmit={addBloco}>
+          <input
+            type="text"
+            maxLength={2}
+            placeholder="novo"
+            value={novoBloco}
+            onChange={(e) => setNovoBloco(e.target.value)}
+          />
+          <button type="submit">Adicionar</button>
+        </form>
       </div>
 
       <div className="map-section-title">Categorias</div>

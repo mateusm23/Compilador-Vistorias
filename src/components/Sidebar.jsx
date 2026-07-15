@@ -39,7 +39,9 @@ export default function Sidebar() {
       </ol>
 
       <div className="sidebar-footer">
-        Processamento local no navegador. Nenhum arquivo é enviado a servidores.
+        Desenvolvido por Mateus Monteiro
+        <br />
+        62 99156-3421
       </div>
     </nav>
   );

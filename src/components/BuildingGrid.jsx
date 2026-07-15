@@ -48,6 +48,13 @@ export default function BuildingGrid() {
         ))}
       </div>
 
+      <div className="building-grid-subheader" style={{ gridTemplateColumns: `48px repeat(${lados.length * nums.length}, 1fr)` }}>
+        <span />
+        {lados.map(lado => nums.map(num => (
+          <span key={`${lado}-${num}`} className="building-grid-num-label">{num}</span>
+        )))}
+      </div>
+
       {pavimentos.map(pav => (
         <div
           key={pav}

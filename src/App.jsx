@@ -23,10 +23,10 @@ function AppShell() {
 
   return (
     <div className="app-shell">
-      <Sidebar />
       <main className="app-main">
         <StepComponent />
       </main>
+      <Sidebar />
     </div>
   );
 }

@@ -36,7 +36,7 @@
   padding: 12px 20px;
   background: none;
   border: none;
-  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
   color: rgba(255, 255, 255, 0.6);
   font-family: inherit;
   font-size: 13.5px;
@@ -62,7 +62,7 @@
 .sidebar-step.active {
   background: rgba(27, 111, 191, 0.30);
   color: #fff;
-  border-left-color: #F5C800;
+  border-right-color: #F5C800;
   font-weight: 700;
 }
 .sidebar-step.active .sidebar-step-num {

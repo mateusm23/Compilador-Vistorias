@@ -2,17 +2,25 @@
   display: flex; flex-direction: column; gap: 4px; overflow-x: auto; padding-bottom: 4px;
 }
 
-.building-grid-header, .building-grid-row {
+.building-grid-header, .building-grid-row, .building-grid-subheader {
   display: grid; gap: 4px; align-items: center; min-width: 480px;
 }
 
 .building-grid-lado-label {
-  text-align: center; font-size: 10.5px; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.03em; padding-bottom: 4px;
+  text-align: center; font-size: 11px; font-weight: 700; color: #fff;
+  text-transform: uppercase; letter-spacing: 0.03em; background: var(--blue);
+  border-radius: 6px; padding: 5px 0; margin-bottom: 2px;
+}
+
+.building-grid-subheader { margin-bottom: 6px; }
+.building-grid-num-label {
+  text-align: center; font-size: 10px; font-weight: 700; color: var(--text-2);
+  background: var(--blue-100); border-radius: 4px; padding: 3px 0;
 }
 
 .building-grid-pav-label {
-  font-size: 11px; color: var(--muted); text-align: right; padding-right: 6px;
+  font-size: 11px; font-weight: 700; color: #fff; text-align: center;
+  background: var(--blue); border-radius: 5px; padding: 4px 0;
   font-variant-numeric: tabular-nums;
 }
 

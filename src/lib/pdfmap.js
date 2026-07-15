@@ -126,7 +126,7 @@ function drawCoverPage(page, { totalUnidades, totalNaoConformidades, farolCounts
   });
 
   // rodapé
-  page.drawText('Gerado por Extrator de Vistorias — processamento 100% local, nenhum dado enviado a servidores.', {
+  page.drawText('Desenvolvido por Mateus Monteiro · 62 99156-3421', {
     x: marginX, y: 34, size: 8, color: c('5E7291'),
   });
 }
@@ -306,7 +306,7 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
     });
   }
 
-  mapPage.drawText('Gerado por Extrator de Vistorias', { x: 40, y: 26, size: 8.5, font, color: MUTED });
+  mapPage.drawText('Desenvolvido por Mateus Monteiro · 62 99156-3421', { x: 40, y: 26, size: 8.5, font, color: MUTED });
   const pageCountText = `${mergedDoc.getPageCount() + 1} páginas no total`;
   const pageCountWidth = font.widthOfTextAtSize(pageCountText, 8.5);
   mapPage.drawText(pageCountText, { x: pageW - 40 - pageCountWidth, y: 26, size: 8.5, font, color: MUTED });
