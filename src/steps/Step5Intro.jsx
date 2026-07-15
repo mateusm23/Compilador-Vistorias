@@ -1,4 +1,5 @@
 import StepShell from './StepShell.jsx';
+import RichTextEditor from '../components/RichTextEditor.jsx';
 import { useReport } from '../state/ReportContext.jsx';
 
 export default function Step5Intro() {
@@ -7,15 +8,9 @@ export default function Step5Intro() {
   return (
     <StepShell
       title="Introdução"
-      description="Texto de abertura do relatório, descrevendo o escopo do trabalho. Um editor com formatação completa (negrito, cor, tamanho, marcação) chega em breve nesta etapa."
+      description="Texto de abertura do relatório, descrevendo o escopo do trabalho. Formate como quiser: negrito, cor, tamanho, marcação e alinhamento."
     >
-      <textarea
-        className="intro-textarea"
-        placeholder="Descreva o escopo do trabalho desenvolvido..."
-        value={state.introContent || ''}
-        onChange={(e) => setIntroContent(e.target.value)}
-        rows={14}
-      />
+      <RichTextEditor content={state.introContent} onChange={setIntroContent} />
     </StepShell>
   );
 }

@@ -79,13 +79,19 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       células, 29 detectadas automaticamente, categoria nova criada e
       atribuída manualmente a uma unidade vazia, processamento final ainda
       funcionando.
-- [ ] **Fase 4 — Formulário de dados do relatório**
-      Nome da obra, responsável, datas, construtora, gerenciadora.
-- [ ] **Fase 5 — Upload de logo + foto de capa**
-- [ ] **Fase 6 — Editor de texto rico (Tiptap) para introdução/escopo**
-      Conversão do conteúdo rico para comandos de desenho no PDF (pdf-lib
-      não renderiza HTML; cada trecho com seu estilo vira uma chamada de
-      `drawText` com fonte/tamanho/cor correspondente).
+- [x] **Fase 4 — Formulário de dados do relatório**
+      Já existia desde a Fase 1 (`Step3ReportData.jsx`): nome da obra,
+      responsável, datas, construtora, gerenciadora, ligado ao estado
+      central. Sem mudanças necessárias nesta fase.
+- [x] **Fase 5 — Upload de logo + foto de capa**
+      Já existia desde a Fase 1 (`Step4Cover.jsx`): upload com preview,
+      ligado ao estado central. Sem mudanças necessárias nesta fase.
+- [x] **Fase 6 — Editor de texto rico (Tiptap) para introdução/escopo**
+      `src/components/RichTextEditor.jsx`: negrito, itálico, sublinhado,
+      tamanho de fonte, cor de texto, marca-texto, alinhamento. Conteúdo
+      salvo como JSON do Tiptap em `introContent` — a conversão para
+      comandos de desenho no PDF fica para a Fase 8. Testado: formatação
+      aplicada corretamente e capturada no HTML do editor.
 - [ ] **Fase 7 — Nova capa do PDF**
       Painel lateral estilo referência, dados do relatório, logo, foto, sem
       link clicável.

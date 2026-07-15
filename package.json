@@ -11,6 +11,13 @@
     "server": "node server/index.js"
   },
   "dependencies": {
+    "@tiptap/extension-color": "^3.27.4",
+    "@tiptap/extension-highlight": "^3.27.4",
+    "@tiptap/extension-text-align": "^3.27.4",
+    "@tiptap/extension-text-style": "^3.27.4",
+    "@tiptap/extension-underline": "^3.27.4",
+    "@tiptap/react": "^3.27.4",
+    "@tiptap/starter-kit": "^3.27.4",
     "buffer": "^6.0.3",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
