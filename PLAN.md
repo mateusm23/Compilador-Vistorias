@@ -159,6 +159,49 @@ As 13 fases do plano foram implementadas e testadas. A ferramenta está
 publicada no GitHub Pages via `.github/workflows/deploy.yml`, acionado
 automaticamente a cada push na branch `main`.
 
+## Pós-lançamento — ajustes v1.2 a v2.0 (fechado)
+
+Depois das 13 fases, o usuário revisou o PDF gerado e pediu uma rodada de
+ajustes finos. Cada item abaixo foi implementado, testado com os 42 PDFs
+reais e commitado separadamente. Versão fechada em **2.0**.
+
+- **Capa mais clara e sem gráfico**: navy trocado de quase-preto (`#0B1524`)
+  para o mesmo tom da sidebar (`#1A2B45`); removida a barra de farol e o
+  texto "Desenvolvido por..." da capa.
+- **Rodapé dos laudos simplificado**: removido "Extrator de Vistorias",
+  mantendo só o nome da gerenciadora sobre o rodapé original coberto.
+- **Bug de quebra de linha na introdução**: o Tiptap representa Shift+Enter
+  como nó `hardBreak` dentro do mesmo parágrafo; o conversor para PDF
+  ignorava esse nó e concatenava o texto sem espaço. Corrigido em
+  `introRender.js` tratando `hardBreak` como marcador de nova linha.
+- **Farol de controle removido do resumo executivo**: o critério
+  "crítico/regular/atenção" era só um terço da distribuição do próprio
+  lote (sem significado absoluto, quebrava com poucas unidades). Trocado
+  por um ranking "Top 10 unidades com mais não conformidades" em
+  `summaryRender.js`.
+- **Capa com foto recortada em diagonal**: a foto da obra agora preenche o
+  próprio recorte diagonal da capa via clip path (operadores gráficos de
+  baixo nível do pdf-lib: `moveTo`/`lineTo`/`clip`/`endPath` entre
+  `pushGraphicsState`/`popGraphicsState`, expostos em `drawClippedImage`
+  dentro de `pdfmap.js`), no lugar da caixa retangular anterior. Faixa
+  navy alargada; caixa de estatísticas removida e virou mais linhas na
+  lista de parâmetros (Unidades / Não conformidades / Gerado em).
+- **Números de unidade no topo das colunas do mapa**: facilita achar o
+  apartamento sem ler o código completo em cada célula. Bug inicial: o
+  índice de coluna era reiniciado a cada bloco, fazendo os números do
+  segundo bloco em diante se desenharem por cima da área do primeiro.
+  Corrigido usando um índice contínuo entre blocos, igual ao loop que
+  desenha as células.
+- **Listas com marcador na introdução**: o Tiptap converte "- texto" em
+  uma lista de verdade (`bulletList` > `listItem` > `paragraph`), estrutura
+  que `extractRuns` em `introRender.js` não reconhecia e descartava
+  inteira. Corrigido com `extractParagraphRuns` + `walkList`, que achata
+  cada item de lista (com ou sem numeração, aninhada ou não) em uma linha
+  própria no PDF, prefixada com "•" ou número.
+- **Controle de versão no rodapé da sidebar**: `src/version.js` exporta
+  `APP_VERSION`, exibido em `Sidebar.jsx`. Incrementado a cada commit
+  desta rodada (1.2 → 1.3 → ... → fechado em **2.0**).
+
 ## Notas técnicas para retomada
 
 - Módulos atuais relevantes: `src/lib/core.js` (orquestração),
