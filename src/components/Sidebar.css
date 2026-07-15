@@ -84,3 +84,12 @@
   border-top: 1px solid rgba(255, 255, 255, 0.10);
   margin-top: 10px;
 }
+
+.sidebar-version {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: rgba(245, 200, 0, 0.75);
+}

@@ -1,4 +1,5 @@
 import { useReport } from '../state/ReportContext.jsx';
+import { APP_VERSION } from '../version.js';
 import './Sidebar.css';
 
 const STEPS = [
@@ -42,6 +43,8 @@ export default function Sidebar() {
         Desenvolvido por Mateus Monteiro
         <br />
         62 99156-3421
+        <br />
+        <span className="sidebar-version">v{APP_VERSION}</span>
       </div>
     </nav>
   );
