@@ -6,6 +6,7 @@
 import { PageSizes, rgb, StandardFonts, PDFName } from 'pdf-lib';
 import { buildFarolThresholds, farolFor, hexToFraction } from './farol.js';
 import { normalizeCode, parseUnitCode } from './units.js';
+import { drawIntroContent } from './introRender.js';
 
 function c(hex) {
   const { r, g, b } = hexToFraction(hex);
@@ -188,6 +189,9 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
   const { unitCounts = {}, totalNaoConformidades = 0 } = meta;
   const font = await mergedDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await mergedDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontItalic = await mergedDoc.embedFont(StandardFonts.HelveticaOblique);
+  const fontBoldItalic = await mergedDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+  const introFonts = { regular: font, bold: fontBold, italic: fontItalic, boldItalic: fontBoldItalic };
 
   // referências às páginas de destino ANTES de qualquer inserção
   const targets = offsets.map(o => ({ ...o, page: mergedDoc.getPage(o.startPage - 1) }));
@@ -376,12 +380,16 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
     fontBold,
   });
 
-  // depois de inserir capa + mapa, toda página original desloca +2
-  const updatedOffsets = offsets.map(o => ({ ...o, startPage: o.startPage + 2 }));
+  // ---- introdução (inserida após capa + mapa, se houver texto) ----
+  const introPageCount = await drawIntroContent(mergedDoc, meta.introContent, introFonts, 2);
 
-  // botão "Voltar ao mapa" no topo de todas as páginas de laudo (a partir do índice 2)
+  // depois de inserir capa + mapa + introdução, toda página original desloca
+  const totalNewPages = 2 + introPageCount;
+  const updatedOffsets = offsets.map(o => ({ ...o, startPage: o.startPage + totalNewPages }));
+
+  // botão "Voltar ao mapa" no topo de todas as páginas de laudo (após capa+mapa+introdução)
   const allPages = mergedDoc.getPages();
-  for (let i = 2; i < allPages.length; i++) {
+  for (let i = totalNewPages; i < allPages.length; i++) {
     const p = allPages[i];
     const { width, height } = p.getSize();
     const btnW = 100, btnH = 17;

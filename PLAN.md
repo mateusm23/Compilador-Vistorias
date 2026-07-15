@@ -100,7 +100,15 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       `core.js` → `addNavigation`. Testado ponta a ponta com imagens reais:
       capa renderiza corretamente com logo, foto, dados preenchidos, e 0
       anotações de link confirmadas por leitura direta do PDF gerado.
-- [ ] **Fase 8 — Página de introdução no PDF** (a partir do texto rico)
+- [x] **Fase 8 — Página de introdução no PDF** (a partir do texto rico)
+      `src/lib/introRender.js`: converte o JSON do Tiptap em página(s) de
+      PDF, com quebra de linha por largura real do texto, negrito/itálico
+      (fontes Helvetica Oblique/BoldOblique), cor, tamanho, marca-texto e
+      alinhamento. Insere as páginas entre mapa e laudos, ajustando todos os
+      offsets e o botão de voltar automaticamente. Se o texto estiver vazio,
+      nenhuma página é criada. Testado com texto longo (várias linhas) e
+      sem texto nenhum — links e numeração de página corretos nos dois
+      casos.
 - [ ] **Fase 9 — Páginas de resumo com gráficos**
       Farol de Controle, por Categoria, por Unidade — barras e rosca
       desenhadas manualmente em pdf-lib (sem biblioteca de gráfico pronta).
