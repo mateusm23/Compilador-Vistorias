@@ -66,13 +66,18 @@ export async function processFiles(files, onProgress) {
     }
   }
 
-  log('Criando mapa clicável e navegação no PDF...');
-  const navigableOffsets = await addNavigation(merged, offsets);
+  const semFoto = allItems.filter(it => it.categoria !== 'Registro Fotográfico (sem patologia)');
+  const unitCounts = {};
+  semFoto.forEach(it => { unitCounts[it.unidade] = (unitCounts[it.unidade] || 0) + 1; });
+
+  log('Criando capa e mapa clicável no PDF...');
+  const navigableOffsets = await addNavigation(merged, offsets, {
+    unitCounts,
+    totalNaoConformidades: semFoto.length,
+  });
 
   const pageByFile = {};
   navigableOffsets.forEach(o => { pageByFile[o.filename] = o.startPage; });
-
-  const semFoto = allItems.filter(it => it.categoria !== 'Registro Fotográfico (sem patologia)');
 
   log('Gerando planilha formatada...');
   const xlsxBytes = await buildWorkbook({ semFoto, pageByFile });
@@ -87,7 +92,7 @@ export async function processFiles(files, onProgress) {
       totalArquivos: files.length,
       totalUnidadesMescladas: offsets.length,
       totalNaoConformidades: semFoto.length,
-      totalPaginasConsolidado: currentPage + 1,
+      totalPaginasConsolidado: merged.getPageCount(),
       totalComFoto: semFoto.filter(it => it.thumbnail).length,
     },
   };

@@ -3,6 +3,7 @@
 // encaixada na célula) usando exceljs. Roda 100% no navegador.
 
 import ExcelJS from 'exceljs';
+import { buildFarolThresholds, farolFor as farolForShared } from './farol.js';
 
 const BRAND_BLUE = 'FF2A78D6';
 const BRAND_BLUE_DARK = 'FF184F95';
@@ -11,13 +12,6 @@ const ROW_ALT = 'FFF4F7FC';
 const BORDER_COLOR = 'FFD9DEE7';
 const INK = 'FF0B0B0B';
 const MUTED = 'FF767676';
-
-const FAROL_VERDE = 'FF0CA30C';
-const FAROL_VERDE_BG = 'FFE3F7E3';
-const FAROL_AMARELO = 'FFC98500';
-const FAROL_AMARELO_BG = 'FFFFF4DE';
-const FAROL_VERMELHO = 'FFD03B3B';
-const FAROL_VERMELHO_BG = 'FFFBE6E6';
 
 const THIN_BORDER = {
   top: { style: 'thin', color: { argb: BORDER_COLOR } },
@@ -73,27 +67,9 @@ function addSummarySheet(wb, name, title, columns, rows) {
   return sheet;
 }
 
-/**
- * Classifica um total de não conformidades num farol (verde/amarelo/vermelho)
- * a partir dos limiares calculados sobre a própria distribuição do lote
- * (terços da amplitude entre o menor e o maior valor), para o farol se
- * adaptar à realidade de cada empreendimento em vez de usar números fixos.
- */
-function buildFarolThresholds(values) {
-  if (values.length === 0) return { low: 5, high: 15 };
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const span = Math.max(1, max - min);
-  return {
-    low: min + span / 3,
-    high: min + (span * 2) / 3,
-  };
-}
-
 function farolFor(value, thresholds) {
-  if (value <= thresholds.low) return { label: 'Regular', color: FAROL_VERDE, bg: FAROL_VERDE_BG, emoji: '🟢' };
-  if (value <= thresholds.high) return { label: 'Atenção', color: FAROL_AMARELO, bg: FAROL_AMARELO_BG, emoji: '🟡' };
-  return { label: 'Crítico', color: FAROL_VERMELHO, bg: FAROL_VERMELHO_BG, emoji: '🔴' };
+  const f = farolForShared(value, thresholds);
+  return { label: f.label, color: `FF${f.hex}`, bg: `FF${f.bg}`, emoji: f.emoji };
 }
 
 function addFarolSheet(wb, { unitRows, catRows }) {
