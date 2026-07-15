@@ -3,7 +3,10 @@
 // fixo no topo de todas as demais páginas — tudo com hyperlinks internos
 // reais (funciona em qualquer leitor de PDF, sem precisar de navegador).
 
-import { PageSizes, rgb, StandardFonts, PDFName } from 'pdf-lib';
+import {
+  PageSizes, rgb, StandardFonts, PDFName,
+  pushGraphicsState, popGraphicsState, moveTo, lineTo, closePath, clip, endPath,
+} from 'pdf-lib';
 import { buildFarolThresholds, farolFor, hexToFraction } from './farol.js';
 import { normalizeCode, parseUnitCode, buildUnitCode } from './units.js';
 import { drawIntroContent } from './introRender.js';
@@ -69,22 +72,56 @@ function fitContain(img, boxW, boxH) {
   return { width: img.width * scale, height: img.height * scale };
 }
 
+function fitCover(img, boxW, boxH) {
+  const scale = Math.max(boxW / img.width, boxH / img.height);
+  return { width: img.width * scale, height: img.height * scale };
+}
+
+// desenha uma imagem recortada num polígono (não retangular), usando os
+// operadores gráficos de baixo nível do pdf-lib (o helper drawImage padrão
+// só desenha retângulos)
+function drawClippedImage(page, image, points, box) {
+  page.pushOperators(pushGraphicsState());
+  page.pushOperators(moveTo(points[0][0], points[0][1]));
+  for (let i = 1; i < points.length; i++) {
+    page.pushOperators(lineTo(points[i][0], points[i][1]));
+  }
+  page.pushOperators(closePath(), clip(), endPath());
+  page.drawImage(image, box);
+  page.pushOperators(popGraphicsState());
+}
+
 /**
  * Desenha a página de capa: fundo escuro, faixa de destaque, dados do
  * relatório preenchidos pelo usuário, logo e foto da obra quando enviados.
  */
 function drawCoverPage(page, {
-  totalUnidades, totalNaoConformidades, farolCounts, geradoEm,
+  totalUnidades, totalNaoConformidades, geradoEm,
   reportData = {}, logoImage, capaPhotoImage, font, fontBold,
 }) {
   const { width: w, height: h } = page.getSize();
 
   page.drawRectangle({ x: 0, y: 0, width: w, height: h, color: NAVY });
-  // faixa diagonal decorativa (aproximada com um retângulo rotacionado)
-  page.drawRectangle({
-    x: w * 0.62, y: -h * 0.3, width: w * 0.55, height: h * 1.8,
-    color: NAVY_2, rotate: { type: 'degrees', angle: 18 },
-  });
+
+  // recorte diagonal (foto da obra ocupa esse polígono; sem foto, fica navy)
+  const clipSvg = [[360, 0], [800, 0], [842, 70], [842, 525], [800, 595], [300, 595]];
+  const clipPoints = clipSvg.map(([x, y]) => [x * (w / 842), h - y * (h / 595)]);
+
+  if (capaPhotoImage) {
+    const boxX = w * (280 / 842);
+    const boxW = w - boxX;
+    const fitted = fitCover(capaPhotoImage, boxW, h);
+    drawClippedImage(page, capaPhotoImage, clipPoints, {
+      x: boxX - (fitted.width - boxW) / 2, y: -(fitted.height - h) / 2,
+      width: fitted.width, height: fitted.height,
+    });
+  } else {
+    page.drawRectangle({
+      x: w * 0.62, y: -h * 0.3, width: w * 0.55, height: h * 1.8,
+      color: NAVY_2, rotate: { type: 'degrees', angle: 18 },
+    });
+  }
+
   page.drawRectangle({ x: 0, y: 0, width: 10, height: h, color: BLUE });
 
   const marginX = 64;
@@ -98,26 +135,14 @@ function drawCoverPage(page, {
     page.drawRectangle({ x: marginX, y: h - 68, width: 34, height: 2, color: BLUE });
   }
 
-  // foto da obra, ocupando boa parte da largura direita da capa
-  if (capaPhotoImage) {
-    const boxW = 340, boxH = 230;
-    const boxX = w - marginX - boxW, boxY = h - 34 - boxH;
-    const fitted = fitContain(capaPhotoImage, boxW, boxH);
-    page.drawRectangle({ x: boxX - 4, y: boxY - 4, width: boxW + 8, height: boxH + 8, color: WHITE, opacity: 0.08 });
-    page.drawImage(capaPhotoImage, {
-      x: boxX + (boxW - fitted.width) / 2, y: boxY + (boxH - fitted.height) / 2,
-      width: fitted.width, height: fitted.height,
-    });
-  }
-
   // título principal
   const obraTitle = reportData.obra ? reportData.obra : 'Relatório Consolidado de Vistorias';
-  page.drawText(obraTitle, { x: marginX, y: h - 150, size: obraTitle.length > 28 ? 26 : 34, font: fontBold, color: WHITE });
+  page.drawText(obraTitle, { x: marginX, y: h - 150, size: obraTitle.length > 22 ? 24 : 32, font: fontBold, color: WHITE });
   page.drawText('Relatório consolidado de vistorias', {
     x: marginX, y: h - 190, size: 13, font, color: c('B7C4D9'),
   });
 
-  // dados do relatório preenchidos pelo usuário
+  // dados do relatório + números-chave, tudo como linhas de parâmetro
   const infoRows = [
     ['Responsável', reportData.responsavel],
     ['Construtora', reportData.construtora],
@@ -125,31 +150,26 @@ function drawCoverPage(page, {
     ['Período', [reportData.dataInicio, reportData.dataFim].filter(Boolean).join(' a ')],
   ].filter(([, value]) => value);
 
-  infoRows.forEach(([label, value], i) => {
-    const y = h - 222 - i * 16;
-    page.drawText(`${label}:`, { x: marginX, y, size: 9.5, font: fontBold, color: c('8FA3C2') });
-    page.drawText(String(value), { x: marginX + 84, y, size: 9.5, font, color: WHITE });
+  let rowY = h - 222;
+  infoRows.forEach(([label, value]) => {
+    page.drawText(`${label}:`, { x: marginX, y: rowY, size: 9.5, font: fontBold, color: c('8FA3C2') });
+    page.drawText(String(value), { x: marginX + 96, y: rowY, size: 9.5, font, color: WHITE });
+    rowY -= 18;
   });
 
-  // painel de números-chave
-  const panelY = 110;
-  const panelH = 120;
-  const panelW = w - marginX * 2;
-  page.drawRectangle({
-    x: marginX, y: panelY, width: panelW, height: panelH,
-    color: c('FFFFFF'), opacity: 0.06, borderColor: c('FFFFFF'), borderOpacity: 0.14, borderWidth: 1,
-  });
+  rowY -= 4;
+  page.drawRectangle({ x: marginX, y: rowY + 14, width: 230, height: 0.75, color: WHITE, opacity: 0.14 });
+  rowY -= 8;
 
-  const stats = [
-    { label: 'Unidades no lote', value: String(totalUnidades) },
-    { label: 'Não conformidades', value: String(totalNaoConformidades) },
-    { label: 'Gerado em', value: geradoEm },
+  const statRows = [
+    ['Unidades', String(totalUnidades)],
+    ['Não conformidades', String(totalNaoConformidades)],
+    ['Gerado em', geradoEm],
   ];
-  const colW = panelW / stats.length;
-  stats.forEach((s, i) => {
-    const x = marginX + i * colW + 24;
-    page.drawText(s.value, { x, y: panelY + panelH - 50, size: 26, font: fontBold, color: WHITE });
-    page.drawText(s.label.toUpperCase(), { x, y: panelY + panelH - 70, size: 8.5, font, color: c('8FA3C2') });
+  statRows.forEach(([label, value]) => {
+    page.drawText(`${label}:`, { x: marginX, y: rowY, size: 9.5, font: fontBold, color: c('8FA3C2') });
+    page.drawText(String(value), { x: marginX + 96, y: rowY, size: 9.5, font: fontBold, color: WHITE });
+    rowY -= 18;
   });
 }
 
@@ -255,7 +275,8 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
 
   const innerPad = 18;
   const marginX = cardX + innerPad;
-  const gridTop = cardTop - 34;
+  const numberRowH = 14;
+  const gridTop = cardTop - 34 - numberRowH;
   const gridBottom = cardBottom + (naoReconhecidas.length > 0 ? 54 : innerPad);
 
   if (buildingConfig && buildingConfig.lados.length > 0) {
@@ -283,6 +304,22 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
       const pw = fontBold.widthOfTextAtSize(text, 8) + 14;
       mapPage.drawRectangle({ x, y: pillY, width: pw, height: 15, color: c('E8F0FC') });
       mapPage.drawText(text, { x: x + 7, y: pillY + 4.5, size: 8, font: fontBold, color: BLUE_DARK });
+    });
+
+    // número final da unidade no topo de cada coluna, pra localizar rápido
+    // qual apartamento é qual sem precisar ler o código completo na célula
+    lados.forEach((lado, li) => {
+      let colIdx = 0;
+      for (let n = numMin; n <= numMax; n++) {
+        const extraGap = li * gapColWidth;
+        const x = marginX + labelColWidth + colIdx * cellWidth + extraGap;
+        const label = String(n).padStart(2, '0');
+        const lw = font.widthOfTextAtSize(label, 7);
+        mapPage.drawText(label, {
+          x: x + (cellWidth - 2 - lw) / 2, y: gridTop + 2, size: 7, font, color: MUTED,
+        });
+        colIdx++;
+      }
     });
 
     // legenda das categorias, alinhada à direita do cabeçalho da grade
@@ -385,9 +422,9 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
   // ---- introdução (inserida após capa + mapa, se houver texto) ----
   const introPageCount = await drawIntroContent(mergedDoc, meta.introContent, introFonts, 2);
 
-  // ---- resumo executivo (farol em rosca + categorias em barra) ----
+  // ---- resumo executivo (top 10 unidades + categorias em barra) ----
   const summaryPageCount = drawSummaryPage(mergedDoc, {
-    farolCounts,
+    unitCounts,
     categoryCounts: meta.categoryCounts || [],
     totalNaoConformidades,
   }, { regular: font, bold: fontBold }, 2 + introPageCount);
