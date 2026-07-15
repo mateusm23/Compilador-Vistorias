@@ -5,6 +5,7 @@
 
 import { PageSizes, rgb, StandardFonts, PDFName } from 'pdf-lib';
 import { buildFarolThresholds, farolFor, hexToFraction } from './farol.js';
+import { normalizeCode, parseUnitCode } from './units.js';
 
 function c(hex) {
   const { r, g, b } = hexToFraction(hex);
@@ -15,22 +16,6 @@ function c(hex) {
 function isLight(hex) {
   const { r, g, b } = hexToFraction(hex);
   return (0.299 * r + 0.587 * g + 0.114 * b) > 0.6;
-}
-
-function normalizeCode(u) {
-  return u.replace(/\s+/g, '').toUpperCase();
-}
-
-// Código no padrão "<pavimento><02><A|B>", ex: 1002A, 301B
-function parseUnitCode(code) {
-  const m = code.match(/^(\d+)([AB])$/i);
-  if (!m) return null;
-  const digits = m[1];
-  const lado = m[2].toUpperCase();
-  if (digits.length < 3) return null;
-  const num = digits.slice(-2);
-  const pav = digits.slice(0, -2);
-  return { pav: parseInt(pav, 10), num: parseInt(num, 10), lado, pavStr: pav };
 }
 
 function addLinkAnnotation(doc, page, rect, targetPage) {
