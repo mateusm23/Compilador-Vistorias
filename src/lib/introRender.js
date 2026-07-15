@@ -26,40 +26,71 @@ function parsePx(value, fallback) {
 }
 
 /**
- * Extrai uma lista plana de "runs" (parágrafo, texto, estilo) do doc do Tiptap.
+ * Extrai os runs de um nó de parágrafo/heading (texto, estilo, quebras
+ * manuais), com um prefixo opcional (usado para marcadores de lista).
+ */
+function extractParagraphRuns(node, prefix) {
+  const align = node.attrs?.textAlign || 'left';
+  const runs = [];
+  if (prefix) runs.push({ text: prefix, bold: false, italic: false, underline: false, color: null, fontSize: 13, highlight: null });
+  (node.content || []).forEach(textNode => {
+    if (textNode.type === 'hardBreak') {
+      runs.push({ forceBreak: true });
+      return;
+    }
+    if (textNode.type !== 'text') return;
+    const marks = textNode.marks || [];
+    const bold = marks.some(m => m.type === 'bold');
+    const italic = marks.some(m => m.type === 'italic');
+    const underline = marks.some(m => m.type === 'underline');
+    const textStyle = marks.find(m => m.type === 'textStyle');
+    const highlightMark = marks.find(m => m.type === 'highlight');
+    runs.push({
+      text: textNode.text,
+      bold, italic, underline,
+      color: textStyle?.attrs?.color || null,
+      fontSize: parsePx(textStyle?.attrs?.fontSize, 13),
+      highlight: highlightMark?.attrs?.color || null,
+    });
+  });
+  return { align, runs };
+}
+
+/**
+ * Extrai uma lista plana de parágrafos (runs + alinhamento) do doc do
+ * Tiptap, "achatando" listas com marcador/numeradas em uma linha por item.
  */
 function extractRuns(doc) {
   const paragraphs = [];
   const content = doc?.content || [];
 
-  content.forEach(node => {
-    if (node.type !== 'paragraph' && node.type !== 'heading') {
-      paragraphs.push({ align: 'left', runs: [] });
-      return;
-    }
-    const align = node.attrs?.textAlign || 'left';
-    const runs = [];
-    (node.content || []).forEach(textNode => {
-      if (textNode.type === 'hardBreak') {
-        runs.push({ forceBreak: true });
-        return;
-      }
-      if (textNode.type !== 'text') return;
-      const marks = textNode.marks || [];
-      const bold = marks.some(m => m.type === 'bold');
-      const italic = marks.some(m => m.type === 'italic');
-      const underline = marks.some(m => m.type === 'underline');
-      const textStyle = marks.find(m => m.type === 'textStyle');
-      const highlightMark = marks.find(m => m.type === 'highlight');
-      runs.push({
-        text: textNode.text,
-        bold, italic, underline,
-        color: textStyle?.attrs?.color || null,
-        fontSize: parsePx(textStyle?.attrs?.fontSize, 13),
-        highlight: highlightMark?.attrs?.color || null,
+  function walkList(listNode, ordered) {
+    (listNode.content || []).forEach((listItem, idx) => {
+      const prefix = ordered ? `${idx + 1}. ` : '• ';
+      let first = true;
+      (listItem.content || []).forEach(child => {
+        if (child.type === 'paragraph' || child.type === 'heading') {
+          paragraphs.push(extractParagraphRuns(child, first ? prefix : '    '));
+          first = false;
+        } else if (child.type === 'bulletList') {
+          walkList(child, false);
+        } else if (child.type === 'orderedList') {
+          walkList(child, true);
+        }
       });
     });
-    paragraphs.push({ align, runs });
+  }
+
+  content.forEach(node => {
+    if (node.type === 'paragraph' || node.type === 'heading') {
+      paragraphs.push(extractParagraphRuns(node, ''));
+    } else if (node.type === 'bulletList') {
+      walkList(node, false);
+    } else if (node.type === 'orderedList') {
+      walkList(node, true);
+    } else {
+      paragraphs.push({ align: 'left', runs: [] });
+    }
   });
 
   return paragraphs;
