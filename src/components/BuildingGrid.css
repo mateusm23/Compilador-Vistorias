@@ -1,0 +1,41 @@
+.building-grid {
+  display: flex; flex-direction: column; gap: 4px; overflow-x: auto; padding-bottom: 4px;
+}
+
+.building-grid-header, .building-grid-row {
+  display: grid; gap: 4px; align-items: center; min-width: 480px;
+}
+
+.building-grid-lado-label {
+  text-align: center; font-size: 10.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.03em; padding-bottom: 4px;
+}
+
+.building-grid-pav-label {
+  font-size: 11px; color: var(--muted); text-align: right; padding-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.building-grid-cell-wrap { position: relative; }
+
+.building-grid-cell {
+  width: 100%; height: 26px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 9px; font-weight: 700; color: transparent; font-family: inherit;
+  transition: transform 0.08s ease;
+}
+.building-grid-cell:hover { transform: scale(1.06); z-index: 2; position: relative; }
+.building-grid-cell.empty { background: var(--page); border: 1px dashed var(--border); }
+
+.building-grid-popover {
+  position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 20px -6px rgba(11, 11, 11, 0.25); padding: 6px; z-index: 10;
+  display: flex; flex-direction: column; min-width: 160px;
+}
+.building-grid-popover button {
+  display: flex; align-items: center; gap: 8px; background: none; border: none;
+  padding: 8px 10px; font-size: 12.5px; text-align: left; cursor: pointer; border-radius: 6px;
+  font-family: inherit; color: var(--text);
+}
+.building-grid-popover button:hover { background: var(--page); }
+.building-grid-popover .category-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }

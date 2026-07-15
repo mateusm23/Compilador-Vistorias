@@ -71,9 +71,14 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       são soltos; `Step2Map.jsx` já lista as unidades detectadas (versão
       provisória em lista — a grade visual completa entra na Fase 10).
       Commit `d8a3bbe`.
-- [ ] **Fase 3 — Configuração de estrutura do empreendimento + categorias**
-      UI para editar pavimentos/blocos/aptos por andar, criar categorias
-      customizadas (nome + cor), clique na unidade abre seletor de categoria.
+- [x] **Fase 3 — Configuração de estrutura do empreendimento + categorias**
+      `src/components/BuildingGrid.jsx` (grade completa clicável, unidade a
+      unidade) e `src/components/CategoryManager.jsx` (categorias
+      customizadas com cor). `units.js` generalizado para aceitar qualquer
+      letra de bloco (A-Z), não só A/B. Testado ponta a ponta: grade de 152
+      células, 29 detectadas automaticamente, categoria nova criada e
+      atribuída manualmente a uma unidade vazia, processamento final ainda
+      funcionando.
 - [ ] **Fase 4 — Formulário de dados do relatório**
       Nome da obra, responsável, datas, construtora, gerenciadora.
 - [ ] **Fase 5 — Upload de logo + foto de capa**

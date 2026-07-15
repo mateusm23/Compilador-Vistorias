@@ -6,9 +6,11 @@ export function normalizeCode(u) {
   return u.replace(/\s+/g, '').toUpperCase();
 }
 
-// Código no padrão "<pavimento><02><A|B>", ex: 1002A, 301B
+// Código no padrão "<pavimento><02><bloco>", ex: 1002A, 301B, 1204C
+// O bloco aceita qualquer letra única, não só A/B, para suportar
+// empreendimentos com mais de duas torres.
 export function parseUnitCode(code) {
-  const m = code.match(/^(\d+)([AB])$/i);
+  const m = code.match(/^(\d+)([A-Z])$/i);
   if (!m) return null;
   const digits = m[1];
   const lado = m[2].toUpperCase();
@@ -16,6 +18,12 @@ export function parseUnitCode(code) {
   const num = digits.slice(-2);
   const pav = digits.slice(0, -2);
   return { pav: parseInt(pav, 10), num: parseInt(num, 10), lado, pavStr: pav };
+}
+
+// Monta o código de uma unidade a partir de pavimento/número/bloco, no mesmo
+// formato reconhecido por parseUnitCode.
+export function buildUnitCode(pav, num, lado) {
+  return `${pav}${String(num).padStart(2, '0')}${lado}`;
 }
 
 export function unidadeFromFilename(filename) {
