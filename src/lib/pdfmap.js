@@ -308,17 +308,17 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
 
     // número final da unidade no topo de cada coluna, pra localizar rápido
     // qual apartamento é qual sem precisar ler o código completo na célula
+    let numberColIdx = 0;
     lados.forEach((lado, li) => {
-      let colIdx = 0;
+      const extraGap = li * gapColWidth;
       for (let n = numMin; n <= numMax; n++) {
-        const extraGap = li * gapColWidth;
-        const x = marginX + labelColWidth + colIdx * cellWidth + extraGap;
+        const x = marginX + labelColWidth + numberColIdx * cellWidth + extraGap;
         const label = String(n).padStart(2, '0');
         const lw = font.widthOfTextAtSize(label, 7);
         mapPage.drawText(label, {
           x: x + (cellWidth - 2 - lw) / 2, y: gridTop + 2, size: 7, font, color: MUTED,
         });
-        colIdx++;
+        numberColIdx++;
       }
     });
 
