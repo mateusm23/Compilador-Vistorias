@@ -135,9 +135,13 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       neutras.
 - [ ] **Fase 11 — Botão "voltar ao mapa" redesenhado**
       Azul petróleo, fonte branca, sem "<<".
-- [ ] **Fase 12 — Revisão geral de texto**
-      Remover travessões e fraseado genérico em toda a interface, PDF e
-      Excel.
+- [x] **Fase 12 — Revisão geral de texto**
+      Varredura completa por travessão (—) em todo o código: só restaram em
+      comentários internos (não visíveis ao usuário); corrigido o único
+      título de planilha que usava travessão ("Farol de Controle — Não
+      Conformidades por Unidade" → dois pontos). Varredura por fraseado
+      genérico ("além disso", "é importante", "vale ressaltar" etc.): nada
+      encontrado.
 - [ ] **Fase 13 — Cabeçalho/rodapé de marca em todas as páginas** (por
       último, conforme pedido)
       Inclui sobrepor o rodapé original "Report & Run" das páginas dos

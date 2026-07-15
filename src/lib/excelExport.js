@@ -77,7 +77,7 @@ function addFarolSheet(wb, { unitRows, catRows }) {
 
   sheet.mergeCells(1, 1, 1, 5);
   const title = sheet.getCell(1, 1);
-  title.value = 'Farol de Controle — Não Conformidades por Unidade';
+  title.value = 'Farol de Controle: Não Conformidades por Unidade';
   title.font = { bold: true, size: 14, color: { argb: BRAND_BLUE_DARK } };
   sheet.getRow(1).height = 28;
 
