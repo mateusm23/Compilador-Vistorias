@@ -50,6 +50,13 @@ export default function Step6Generate() {
       arrayBuffer: await file.arrayBuffer(),
     })));
 
+    const logo = state.logoFile
+      ? { arrayBuffer: await state.logoFile.arrayBuffer(), type: state.logoFile.type }
+      : null;
+    const capaPhoto = state.capaPhotoFile
+      ? { arrayBuffer: await state.capaPhotoFile.arrayBuffer(), type: state.capaPhotoFile.type }
+      : null;
+
     const worker = workerRef.current;
 
     worker.onmessage = (event) => {
@@ -71,9 +78,20 @@ export default function Step6Generate() {
       }
     };
 
+    const transferList = filesData.map(f => f.arrayBuffer);
+    if (logo) transferList.push(logo.arrayBuffer);
+    if (capaPhoto) transferList.push(capaPhoto.arrayBuffer);
+
     worker.postMessage(
-      { type: 'process', files: filesData },
-      filesData.map(f => f.arrayBuffer),
+      {
+        type: 'process',
+        files: filesData,
+        reportData: state.reportData,
+        logo,
+        capaPhoto,
+        introContent: state.introContent,
+      },
+      transferList,
     );
   };
 

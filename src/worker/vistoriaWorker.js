@@ -8,13 +8,13 @@ globalThis.Buffer = globalThis.Buffer || Buffer;
 import { processFiles } from '../lib/core.js';
 
 self.onmessage = async (event) => {
-  const { type, files } = event.data;
+  const { type, files, reportData, logo, capaPhoto, introContent } = event.data;
   if (type !== 'process') return;
 
   try {
     const result = await processFiles(files, (msg) => {
       self.postMessage({ type: 'log', message: msg });
-    });
+    }, { reportData, logo, capaPhoto, introContent });
 
     self.postMessage({
       type: 'done',

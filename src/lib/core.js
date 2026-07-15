@@ -12,9 +12,10 @@ import { buildWorkbook } from './excelExport.js';
 /**
  * files: [{ filename, arrayBuffer }]
  * onProgress: optional (msg) => void
+ * extra: { reportData, logo: {arrayBuffer, type}, capaPhoto: {arrayBuffer, type}, introContent }
  * returns: { xlsxBytes: Uint8Array, pdfBytes: Uint8Array, stats }
  */
-export async function processFiles(files, onProgress) {
+export async function processFiles(files, onProgress, extra = {}) {
   const log = onProgress || (() => {});
   const allItems = [];
   const merged = await PDFDocument.create();
@@ -74,6 +75,10 @@ export async function processFiles(files, onProgress) {
   const navigableOffsets = await addNavigation(merged, offsets, {
     unitCounts,
     totalNaoConformidades: semFoto.length,
+    reportData: extra.reportData,
+    logo: extra.logo,
+    capaPhoto: extra.capaPhoto,
+    introContent: extra.introContent,
   });
 
   const pageByFile = {};

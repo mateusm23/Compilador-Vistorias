@@ -92,9 +92,14 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       salvo como JSON do Tiptap em `introContent` — a conversão para
       comandos de desenho no PDF fica para a Fase 8. Testado: formatação
       aplicada corretamente e capturada no HTML do editor.
-- [ ] **Fase 7 — Nova capa do PDF**
-      Painel lateral estilo referência, dados do relatório, logo, foto, sem
-      link clicável.
+- [x] **Fase 7 — Nova capa do PDF**
+      Dados do relatório (obra, responsável, construtora, gerenciadora),
+      logo e foto da capa embutidos (`embedJpg`/`embedPng`, com fallback
+      silencioso para formatos não suportados como webp). Link de página
+      inteira removido. Fluxo de dados: `Step6Generate.jsx` → worker →
+      `core.js` → `addNavigation`. Testado ponta a ponta com imagens reais:
+      capa renderiza corretamente com logo, foto, dados preenchidos, e 0
+      anotações de link confirmadas por leitura direta do PDF gerado.
 - [ ] **Fase 8 — Página de introdução no PDF** (a partir do texto rico)
 - [ ] **Fase 9 — Páginas de resumo com gráficos**
       Farol de Controle, por Categoria, por Unidade — barras e rosca

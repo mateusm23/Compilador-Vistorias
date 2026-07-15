@@ -48,11 +48,32 @@ const SHADOW = c('D9D9D8');
 const STRIPE = c('F6F7FA');
 const BORDER_LIGHT = c('E0E0DF');
 
+async function embedImageSmart(doc, imageData) {
+  if (!imageData || !imageData.arrayBuffer || imageData.arrayBuffer.byteLength === 0) return null;
+  const bytes = new Uint8Array(imageData.arrayBuffer);
+  const type = (imageData.type || '').toLowerCase();
+  try {
+    if (type.includes('png')) return await doc.embedPng(bytes);
+    return await doc.embedJpg(bytes);
+  } catch (e) {
+    // formato não suportado (ex: webp) — a capa segue sem a imagem
+    return null;
+  }
+}
+
+function fitContain(img, boxW, boxH) {
+  const scale = Math.min(boxW / img.width, boxH / img.height);
+  return { width: img.width * scale, height: img.height * scale };
+}
+
 /**
- * Desenha a página de capa (estilo "relatório executivo"): fundo escuro,
- * faixa de destaque, título, e um painel com os números-chave do lote.
+ * Desenha a página de capa: fundo escuro, faixa de destaque, dados do
+ * relatório preenchidos pelo usuário, logo e foto da obra quando enviados.
  */
-function drawCoverPage(page, { totalUnidades, totalNaoConformidades, farolCounts, geradoEm }) {
+function drawCoverPage(page, {
+  totalUnidades, totalNaoConformidades, farolCounts, geradoEm,
+  reportData = {}, logoImage, capaPhotoImage, font, fontBold,
+}) {
   const { width: w, height: h } = page.getSize();
 
   page.drawRectangle({ x: 0, y: 0, width: w, height: h, color: NAVY });
@@ -65,21 +86,46 @@ function drawCoverPage(page, { totalUnidades, totalNaoConformidades, farolCounts
 
   const marginX = 64;
 
-  // "logo" / marca
-  page.drawText('EXTRATOR DE VISTORIAS', {
-    x: marginX, y: h - 60, size: 12, color: BLUE, opacity: 0.95,
-  });
-  page.drawRectangle({ x: marginX, y: h - 68, width: 34, height: 2, color: BLUE });
+  // logo (imagem enviada) ou marca padrão como recuo
+  if (logoImage) {
+    const box = fitContain(logoImage, 130, 42);
+    page.drawImage(logoImage, { x: marginX, y: h - 34 - box.height, width: box.width, height: box.height });
+  } else {
+    page.drawText('EXTRATOR DE VISTORIAS', { x: marginX, y: h - 60, size: 12, font: fontBold, color: BLUE, opacity: 0.95 });
+    page.drawRectangle({ x: marginX, y: h - 68, width: 34, height: 2, color: BLUE });
+  }
+
+  // foto da obra, no canto superior direito
+  if (capaPhotoImage) {
+    const boxW = 220, boxH = 130;
+    const boxX = w - marginX - boxW, boxY = h - 34 - boxH;
+    const fitted = fitContain(capaPhotoImage, boxW, boxH);
+    page.drawRectangle({ x: boxX - 4, y: boxY - 4, width: boxW + 8, height: boxH + 8, color: WHITE, opacity: 0.08 });
+    page.drawImage(capaPhotoImage, {
+      x: boxX + (boxW - fitted.width) / 2, y: boxY + (boxH - fitted.height) / 2,
+      width: fitted.width, height: fitted.height,
+    });
+  }
 
   // título principal
-  page.drawText('Relatório Consolidado', {
-    x: marginX, y: h - 150, size: 34, color: WHITE,
+  const obraTitle = reportData.obra ? reportData.obra : 'Relatório Consolidado de Vistorias';
+  page.drawText(obraTitle, { x: marginX, y: h - 150, size: obraTitle.length > 28 ? 26 : 34, font: fontBold, color: WHITE });
+  page.drawText('Relatório consolidado de vistorias', {
+    x: marginX, y: h - 190, size: 13, font, color: c('B7C4D9'),
   });
-  page.drawText('de Vistorias', {
-    x: marginX, y: h - 190, size: 34, color: WHITE,
-  });
-  page.drawText('Laudos individuais mesclados, classificados e organizados num único documento navegável.', {
-    x: marginX, y: h - 218, size: 11.5, color: c('B7C4D9'),
+
+  // dados do relatório preenchidos pelo usuário
+  const infoRows = [
+    ['Responsável', reportData.responsavel],
+    ['Construtora', reportData.construtora],
+    ['Gerenciadora', reportData.gerenciadora],
+    ['Período', [reportData.dataInicio, reportData.dataFim].filter(Boolean).join(' a ')],
+  ].filter(([, value]) => value);
+
+  infoRows.forEach(([label, value], i) => {
+    const y = h - 222 - i * 16;
+    page.drawText(`${label}:`, { x: marginX, y, size: 9.5, font: fontBold, color: c('8FA3C2') });
+    page.drawText(String(value), { x: marginX + 84, y, size: 9.5, font, color: WHITE });
   });
 
   // painel de números-chave
@@ -99,8 +145,8 @@ function drawCoverPage(page, { totalUnidades, totalNaoConformidades, farolCounts
   const colW = panelW / stats.length;
   stats.forEach((s, i) => {
     const x = marginX + i * colW + 24;
-    page.drawText(s.value, { x, y: panelY + panelH - 46, size: 26, color: WHITE });
-    page.drawText(s.label.toUpperCase(), { x, y: panelY + panelH - 66, size: 8.5, color: c('8FA3C2') });
+    page.drawText(s.value, { x, y: panelY + panelH - 46, size: 26, font: fontBold, color: WHITE });
+    page.drawText(s.label.toUpperCase(), { x, y: panelY + panelH - 66, size: 8.5, font, color: c('8FA3C2') });
   });
 
   // barra de farol (distribuição de severidade)
@@ -122,12 +168,12 @@ function drawCoverPage(page, { totalUnidades, totalNaoConformidades, farolCounts
     cursor += segW;
   });
   page.drawText(`${farolCounts.regular} regular · ${farolCounts.atencao} atenção · ${farolCounts.critico} crítico`, {
-    x: barX, y: barY - 14, size: 8.5, color: c('8FA3C2'),
+    x: barX, y: barY - 14, size: 8.5, font, color: c('8FA3C2'),
   });
 
   // rodapé
   page.drawText('Desenvolvido por Mateus Monteiro · 62 99156-3421', {
-    x: marginX, y: 34, size: 8, color: c('5E7291'),
+    x: marginX, y: 34, size: 8, font, color: c('5E7291'),
   });
 }
 
@@ -312,14 +358,23 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
   mapPage.drawText(pageCountText, { x: pageW - 40 - pageCountWidth, y: 26, size: 8.5, font, color: MUTED });
 
   // ---- capa (inserida por último, empurra o mapa para o índice 1) ----
+  const [logoImage, capaPhotoImage] = await Promise.all([
+    embedImageSmart(mergedDoc, meta.logo),
+    embedImageSmart(mergedDoc, meta.capaPhoto),
+  ]);
+
   const coverPage = mergedDoc.insertPage(0, [pageW, pageH]);
   drawCoverPage(coverPage, {
     totalUnidades,
     totalNaoConformidades,
     farolCounts,
     geradoEm,
+    reportData: meta.reportData || {},
+    logoImage,
+    capaPhotoImage,
+    font,
+    fontBold,
   });
-  addLinkAnnotation(mergedDoc, coverPage, { x: 0, y: 0, width: pageW, height: pageH }, mapPage);
 
   // depois de inserir capa + mapa, toda página original desloca +2
   const updatedOffsets = offsets.map(o => ({ ...o, startPage: o.startPage + 2 }));
