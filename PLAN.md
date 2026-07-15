@@ -142,10 +142,22 @@ relatório semanal de obra da Trinus) — analisado em `js/pdf/pages.js`,
       Conformidades por Unidade" → dois pontos). Varredura por fraseado
       genérico ("além disso", "é importante", "vale ressaltar" etc.): nada
       encontrado.
-- [ ] **Fase 13 — Cabeçalho/rodapé de marca em todas as páginas** (por
+- [x] **Fase 13 — Cabeçalho/rodapé de marca em todas as páginas** (por
       último, conforme pedido)
-      Inclui sobrepor o rodapé original "Report & Run" das páginas dos
-      laudos individuais por um rodapé "Gerenciadora Trinus" com logo.
+      Rodapé branco sobrepõe totalmente o rodapé original "Gerado por
+      Report & Run" das páginas dos laudos individuais, mostrando o nome da
+      gerenciadora (do formulário de dados do relatório, com fallback
+      "Gerenciadora Trinus") e "Extrator de Vistorias". Testado com os 42
+      PDFs reais (569 páginas no total): rodapé original não aparece em
+      nenhuma página verificada (páginas 4 e 300), 607 anotações de link
+      confirmadas (565 botões "Voltar ao mapa" nas páginas de laudo + 42
+      links no mapa, batendo exatamente com o esperado).
+
+## Todas as fases concluídas
+
+As 13 fases do plano foram implementadas e testadas. A ferramenta está
+publicada no GitHub Pages via `.github/workflows/deploy.yml`, acionado
+automaticamente a cada push na branch `main`.
 
 ## Notas técnicas para retomada
 

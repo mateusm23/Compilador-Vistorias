@@ -424,12 +424,23 @@ export async function addNavigation(mergedDoc, offsets, meta = {}) {
   const totalNewPages = 2 + introPageCount + summaryPageCount;
   const updatedOffsets = offsets.map(o => ({ ...o, startPage: o.startPage + totalNewPages }));
 
-  // botão "Voltar ao mapa" no topo de todas as páginas de laudo (após capa+mapa+introdução)
+  // cabeçalho/rodapé de marca em todas as páginas de laudo, cobrindo o
+  // rodapé original do gerador do laudo (linha + "gerado por ...")
   const allPages = mergedDoc.getPages();
   const backLabel = 'Voltar ao mapa';
+  const gerenciadora = (meta.reportData && meta.reportData.gerenciadora) || 'Gerenciadora Trinus';
   for (let i = totalNewPages; i < allPages.length; i++) {
     const p = allPages[i];
     const { width, height } = p.getSize();
+
+    const footerH = 64;
+    p.drawRectangle({ x: 0, y: 0, width, height: footerH, color: WHITE });
+    p.drawRectangle({ x: 24, y: footerH - 1, width: width - 48, height: 0.75, color: BORDER_LIGHT });
+    p.drawText(gerenciadora, { x: 24, y: 22, size: 8, font: fontBold, color: NAVY });
+    const brandText = 'Extrator de Vistorias';
+    const brandW = font.widthOfTextAtSize(brandText, 7.5);
+    p.drawText(brandText, { x: width - 24 - brandW, y: 22, size: 7.5, font, color: MUTED });
+
     const labelWidth = fontBold.widthOfTextAtSize(backLabel, 8);
     const btnW = labelWidth + 24, btnH = 18;
     const bx = width - btnW - 10;
