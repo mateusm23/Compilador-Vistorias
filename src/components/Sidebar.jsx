@@ -4,11 +4,12 @@ import './Sidebar.css';
 
 const STEPS = [
   { n: 1, label: 'Laudos PDF', isDone: (s) => s.pdfFiles.length > 0 },
-  { n: 2, label: 'Mapa do empreendimento', isDone: (s) => s.detectedUnits.length > 0 },
-  { n: 3, label: 'Dados do relatório', isDone: (s) => s.reportData.obra.trim().length > 0 },
-  { n: 4, label: 'Capa', isDone: (s) => !!s.logoFile || !!s.capaPhotoFile },
-  { n: 5, label: 'Introdução', isDone: (s) => !!s.introContent },
-  { n: 6, label: 'Gerar relatório', isDone: () => false },
+  { n: 2, label: 'Ordenar laudos', isDone: (s) => s.pdfFiles.length > 0 },
+  { n: 3, label: 'Mapa do empreendimento', isDone: (s) => s.detectedUnits.length > 0 },
+  { n: 4, label: 'Dados do relatório', isDone: (s) => s.reportData.obra.trim().length > 0 },
+  { n: 5, label: 'Capa', isDone: (s) => !!s.logoFile || !!s.capaPhotoFile },
+  { n: 6, label: 'Introdução', isDone: (s) => !!s.introContent },
+  { n: 7, label: 'Gerar relatório', isDone: () => false },
 ];
 
 export default function Sidebar() {

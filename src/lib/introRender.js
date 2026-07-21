@@ -209,7 +209,7 @@ export async function drawIntroContent(mergedDoc, introContent, fonts, insertAtI
     });
     if (line.length > 0) lines.push({ words: line, width: lineWidth });
 
-    lines.forEach(lineData => {
+    lines.forEach((lineData, lineIdx) => {
       const maxFontSize = lineData.words.length > 0
         ? Math.max(...lineData.words.map(w => w.fontSize))
         : 13;
@@ -220,6 +220,14 @@ export async function drawIntroContent(mergedDoc, introContent, fonts, insertAtI
       let x = textLeft;
       if (paragraph.align === 'center') x = textLeft + (maxWidth - lineData.width) / 2;
       if (paragraph.align === 'right') x = textRight - lineData.width;
+
+      // justificado: distribui o espaço sobrando entre as lacunas de espaço
+      // da linha, exceto na última linha do parágrafo (regra tipográfica padrão)
+      let extraPerGap = 0;
+      if (paragraph.align === 'justify' && lineIdx < lines.length - 1) {
+        const gapCount = lineData.words.filter(w => /^\s+$/.test(w.text)).length;
+        if (gapCount > 0) extraPerGap = (maxWidth - lineData.width) / gapCount;
+      }
 
       lineData.words.forEach(word => {
         const font = pickFont(fonts, word.bold, word.italic);
@@ -236,7 +244,7 @@ export async function drawIntroContent(mergedDoc, introContent, fonts, insertAtI
         if (word.underline) {
           page.drawRectangle({ x, y: y - 1.5, width: word.width, height: 0.75, color: word.color ? c(word.color) : INK });
         }
-        x += word.width;
+        x += word.width + (extraPerGap > 0 && /^\s+$/.test(word.text) ? extraPerGap : 0);
       });
     });
 

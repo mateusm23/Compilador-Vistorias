@@ -5,6 +5,10 @@ const ReportContext = createContext(null);
 
 const DEFAULT_CATEGORY = { id: 'vistoriada', nome: 'Vistoriada', cor: '2A78D6', padrao: true };
 
+function sortFilesByName(files) {
+  return [...files].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { numeric: true }));
+}
+
 const initialState = {
   step: 1,
   pdfFiles: [],
@@ -34,7 +38,7 @@ function reducer(state, action) {
       return { ...state, step: action.step };
 
     case 'ADD_PDF_FILES': {
-      const pdfFiles = [...state.pdfFiles, ...action.files];
+      const pdfFiles = sortFilesByName([...state.pdfFiles, ...action.files]);
       const { parsed, naoReconhecidas, bounds } = detectUnitsFromFilenames(pdfFiles.map(f => f.name));
       const buildingConfig = state.buildingConfig || {
         pavMin: bounds.pavMin, pavMax: bounds.pavMax,
@@ -43,6 +47,16 @@ function reducer(state, action) {
       };
       return { ...state, pdfFiles, detectedUnits: parsed, naoReconhecidas, buildingConfig };
     }
+
+    case 'REORDER_PDF_FILES': {
+      const pdfFiles = [...state.pdfFiles];
+      const [moved] = pdfFiles.splice(action.fromIndex, 1);
+      pdfFiles.splice(action.toIndex, 0, moved);
+      return { ...state, pdfFiles };
+    }
+
+    case 'RESET_PDF_ORDER':
+      return { ...state, pdfFiles: sortFilesByName(state.pdfFiles) };
 
     case 'CLEAR_PDF_FILES':
       return { ...state, pdfFiles: [], detectedUnits: [], naoReconhecidas: [], buildingConfig: null, unitCategoryOverrides: {} };
@@ -95,6 +109,8 @@ export function ReportProvider({ children }) {
   const actions = useMemo(() => ({
     setStep: (step) => dispatch({ type: 'SET_STEP', step }),
     addPdfFiles: (files) => dispatch({ type: 'ADD_PDF_FILES', files }),
+    reorderPdfFiles: (fromIndex, toIndex) => dispatch({ type: 'REORDER_PDF_FILES', fromIndex, toIndex }),
+    resetPdfOrder: () => dispatch({ type: 'RESET_PDF_ORDER' }),
     clearPdfFiles: () => dispatch({ type: 'CLEAR_PDF_FILES' }),
     setBuildingConfig: (config) => dispatch({ type: 'SET_BUILDING_CONFIG', config }),
     addCategory: (category) => dispatch({ type: 'ADD_CATEGORY', category }),

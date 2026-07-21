@@ -85,6 +85,7 @@ export default function RichTextEditor({ content, onChange }) {
         <button type="button" className={editor.isActive({ textAlign: 'left' }) ? 'active' : ''} onClick={() => editor.chain().focus().setTextAlign('left').run()}>⟸</button>
         <button type="button" className={editor.isActive({ textAlign: 'center' }) ? 'active' : ''} onClick={() => editor.chain().focus().setTextAlign('center').run()}>⟺</button>
         <button type="button" className={editor.isActive({ textAlign: 'right' }) ? 'active' : ''} onClick={() => editor.chain().focus().setTextAlign('right').run()}>⟹</button>
+        <button type="button" className={editor.isActive({ textAlign: 'justify' }) ? 'active' : ''} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title="Justificado">☰</button>
       </div>
 
       <EditorContent editor={editor} className="rte-content" />

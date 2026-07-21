@@ -92,7 +92,7 @@ export default function Step1Upload() {
       {state.pdfFiles.length > 0 && (
         <div className="actions">
           <button className="primary" onClick={() => setStep(2)}>
-            Ver mapa das unidades
+            Ordenar laudos
           </button>
         </div>
       )}
